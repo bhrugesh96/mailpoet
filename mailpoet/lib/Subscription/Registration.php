@@ -63,19 +63,39 @@ class Registration {
     print $form;
   }
 
-  public function onMultiSiteRegister($result) {
-    if (empty($result['errors']->errors)) {
-      if (
-        isset($_POST['mailpoet']['subscribe_on_register'])
-        && (bool)$_POST['mailpoet']['subscribe_on_register'] === true
-      ) {
-        $this->subscribeNewUser(
-          $result['user_name'],
-          $result['user_email']
-        );
-      }
+  public function checkMultsiteRegister() {
+    $activeSignup = apply_filters( 'wpmu_active_signup', get_site_option( 'registration', 'none' ));
+    if (
+      $activeSignup === 'none' //Signup disallowed.
+      || !isset($_POST['stage'])
+      || sanitize_text_field(wp_unslash($_POST['stage'])) !== 'validate-user-signup' //Not in the right step of the signup process.
+      || !isset($_POST['user_name'])
+      || !isset($_POST['user_email'])
+    ) {
+      return;
     }
-    return $result;
+    $result = wpmu_validate_user_signup(
+      sanitize_text_field(wp_unslash($_POST['user_name'])),
+      sanitize_text_field(wp_unslash($_POST['user_email']))
+    );
+    $this->onMultiSiteRegister($result);
+  }
+
+  private function onMultiSiteRegister($result) {
+    if (!empty($result['errors']->errors)) {
+      return;
+    }
+    if (
+        !isset($_POST['mailpoet']['subscribe_on_register'])
+        || (bool)$_POST['mailpoet']['subscribe_on_register'] === false
+    ) {
+      return;
+    }
+
+    $this->subscribeNewUser(
+      $result['user_name'],
+      $result['user_email']
+    );
   }
 
   public function onRegister(

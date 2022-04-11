@@ -145,8 +145,8 @@ class Hooks {
           [$this->subscriptionRegistration, 'extendForm']
         );
         $this->wp->addAction(
-          'wpmu_validate_user_signup',
-          [$this->subscriptionRegistration, 'onMultiSiteRegister'],
+          'before_signup_header',
+          [$this->subscriptionRegistration, 'checkMultsiteRegister'],
           60,
           1
         );
